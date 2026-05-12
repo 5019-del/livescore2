@@ -2,41 +2,45 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Football Scoreboard - Final Style</title>
+    <title>Football Scoreboard - SECURE & STABLE</title>
     <style>
-        /* Giao diện tổng thể */
-        body { background: transparent; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; margin: 0; overflow: hidden; color: white; }
-        .scoreboard { display: flex; background: #111; border: 2px solid #333; border-radius: 4px; height: 75px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 15px; }
+        /* RESET CSS MẶC ĐỊNH CỦA TRÌNH DUYỆT ĐỂ BẢO ĐẢM KÍCH THƯỚC CHÍNH XÁC */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* GIAO DIỆN TỔNG THỂ */
+        body { background: transparent; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; overflow: hidden; color: white; }
+        .scoreboard { display: flex; background: #111; border: 2px solid #333; border-radius: 4px; height: 70px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 15px; width: auto; max-width: 90vw; }
         
-        /* Hộp tên đội */
+        /* HỘP TÊN ĐỘI */
         .team-box { display: flex; align-items: center; padding: 0 20px; min-width: 130px; height: 100%; background: #1a1a1a; }
         .home { border-left: 4px solid #00a2ff; }
         .away { border-right: 4px solid #ff3030; flex-direction: row-reverse; }
         .name { font-size: 26px; font-weight: 800; text-transform: uppercase; margin: 0 15px; letter-spacing: 1px; }
         
-        /* Hộp tỉ số */
-        .score { background: #000; font-size: 45px; font-weight: bold; width: 65px; height: 100%; display: flex; align-items: center; justify-content: center; }
+        /* HỘP TỈ SỐ */
+        .score { background: #000; font-size: 45px; font-weight: bold; width: 65px; height: 100%; display: flex; align-items: center; justify-content: center; border-left: 1px solid #333; border-right: 1px solid #333; }
         
-        /* PHẦN THỜI GIAN - ĐÃ ĐỊNH DẠNG LẠI GIỐNG ẢNH MẪU */
+        /* PHẦN THỜI GIAN */
         .timer-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 140px; background: #0c0c0c; height: 100%; border-left: 1px solid #333; border-right: 1px solid #333; }
         .period { color: #00ff00; font-size: 14px; font-weight: bold; margin-bottom: -5px; text-transform: lowercase; }
         
-        /* Định dạng Font chữ 79:51 giống mẫu của bạn */
+        /* Định dạng Font chữ 00:00 */
         .time { 
             color: #ffcc00; 
-            font-size: 46px; /* Tăng size để chữ to rõ */
-            font-weight: 700; /* Nét chữ đậm vừa phải */
-            font-family: 'Arial Black', 'Arial', sans-serif; /* Dùng font Sans-serif dày */
-            letter-spacing: -1px; /* Thu hẹp khoảng cách chữ để giống mẫu */
-            line-height: 1;
+            font-size: 46px; /* Kích thước chữ to */
+            font-weight: 700; 
+            font-family: 'Arial Black', 'Arial', sans-serif; /* Font không chân, dày, giống hệt mẫu */
+            letter-spacing: -1px; /* Khoảng cách chữ hẹp */
+            line-height: 1; /* Căn giữa dọc */
         }
 
+        /* MÀN HÌNH BÁO LỖI (CHỐNG TRUY CẬP LẠ) */
         #denied { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; align-items: center; justify-content: center; font-size: 22px; z-index: 99; }
     </style>
 </head>
 <body>
 
-    <div id="denied">❌ 404 - Truy cập bị từ chối</div>
+    <div id="denied">❌ 404 </div>
 
     <div class="scoreboard" id="ui">
         <div class="team-box home">
@@ -54,9 +58,12 @@
     </div>
 
     <script>
+        // ================= CẤU HÌNH BẢO MẬT VÀ DỮ LIỆU =================
         const SECRET_KEY = "fi6688";
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT_NhfT6-tsgA_tJjqhm9kDnR_PMc8uyuRCTSeexA5GT89wp3LW3jYMi0q2_qDfdCHTaUQ17NMWXuLR/pub?output=csv";
+        // ============================================
 
+        // 1. KIỂM TRA KEY BẢO MẬT TRÊN ĐƯỜNG LINK
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('key') !== SECRET_KEY) {
             document.getElementById('denied').style.display = 'flex';
@@ -64,56 +71,74 @@
         }
 
         let totalSecs = 0;
-        let lastSheetTimeValue = ""; 
+        let lastSheetTimeValue = ""; // Lưu mốc thời gian cũ để so sánh tránh reset
 
+        // HÀM HIỂN THỊ THỜI GIAN LÊN MÀN HÌNH
         function renderTime() {
             let mins = Math.floor(totalSecs / 60);
             let secs = totalSecs % 60;
-            // Hiển thị phút lớn (79, 80...) mượt mà
+            
+            // Định dạng luôn hiển thị 2 chữ số (01:05, 15:30, 110:45)
             document.getElementById('m-time').innerText = 
                 (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
         }
 
+        // TỰ CHẠY GIÂY (CHẠY ĐỘC LẬP MỖI GIÂY)
         setInterval(() => {
             totalSecs++;
             renderTime();
         }, 1000);
 
+        // ĐỒNG BỘ DỮ LIỆU TỪ GOOGLE SHEETS MỖI 3 GIÂY
         async function syncData() {
             try {
                 const r = await fetch(CSV_URL);
                 const data = await r.text();
-                // Xử lý lỗi nếu Google trả về trang HTML thay vì CSV
-                if (data.includes("<!DOCTYPE")) return;
+                
+                // Nếu lấy nhầm link HTML (vẫn còn thẻ <html), bỏ qua không đọc
+                if (data.includes("<!DOCTYPE")) {
+                    console.error("Lỗi: Link bạn đang dùng là link trang web, không phải link CSV!");
+                    return;
+                }
 
+                // Tách dữ liệu CSV
                 const rows = data.split('\n').map(row => row.includes(';') ? row.split(';') : row.split(','));
 
-                document.getElementById('h-name').innerText = (rows[0][0] || "").trim();
+                // Cập nhật text Tên, Tỉ số và Hiệp (Luôn cập nhật)
+                document.getElementById('h-name').innerText = (rows[0][0] || "HOME").trim();
                 document.getElementById('h-score').innerText = (rows[0][1] || "0").trim();
-                document.getElementById('a-name').innerText = (rows[1][0] || "").trim();
+                document.getElementById('a-name').innerText = (rows[1][0] || "AWAY").trim();
                 document.getElementById('a-score').innerText = (rows[1][1] || "0").trim();
-                document.getElementById('m-period').innerText = (rows[2][0] || "1st").trim();
+                document.getElementById('m-period').innerText = (rows[2][0] || "1st").trim().toLowerCase(); // Hiển thị hiệp dạng chữ thường (1st, 2nd...)
 
+                // XỬ LÝ THỜI GIAN THÔNG MINH (CHỐNG LỖI RESET)
                 let currentSheetTime = (rows[2][1] || "00:00").trim();
                 
+                // CHỈ cập nhật lại mốc thời gian nếu bạn chủ động sửa mốc thời gian trên Sheets
                 if (currentSheetTime !== lastSheetTimeValue) {
                     let parts = currentSheetTime.split(':');
                     let sSecs = 0;
                     if (parts.length === 2) {
+                        // Nhập theo phút:giây (ví dụ: 79:51)
                         sSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
                     } else if (parts.length === 3) {
+                        // Nhập theo giờ:phút:giây (ví dụ: 01:19:51)
                         sSecs = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
                     }
 
                     totalSecs = sSecs;
-                    lastSheetTimeValue = currentSheetTime; 
+                    lastSheetTimeValue = currentSheetTime; // Ghi nhớ mốc thời gian mới
                     renderTime();
+                    console.log("Đã cập nhật mốc thời gian mới từ Sheets: " + currentSheetTime);
                 }
-            } catch (err) { }
+            } catch (err) {
+                console.log("Đang đợi dữ liệu...");
+            }
         }
 
+        // Kiểm tra Sheets mỗi 3 giây
         setInterval(syncData, 3000);
-        syncData();
+        syncData(); // Chạy ngay lần đầu
     </script>
 </body>
 </html>
