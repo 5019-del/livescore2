@@ -2,119 +2,112 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Scoreboard Pro</title>
+    <title>Scoreboard Pro - Final Version</title>
     <style>
-        /* Giao diện bảng điểm chuẩn bóng đá */
-        body { background: transparent; font-family: 'Segoe UI', Roboto, Arial, sans-serif; display: flex; justify-content: center; margin: 0; overflow: hidden; color: white; }
-        .scoreboard { display: flex; background: rgba(20, 20, 20, 0.95); border: 2px solid #333; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.8); height: 70px; align-items: center; margin-top: 20px; }
-        .team-box { display: flex; align-items: center; padding: 0 20px; min-width: 130px; height: 100%; background: #252525; }
-        .home-side { border-left: 4px solid #3498db; }
-        .away-side { border-right: 4px solid #e74c3c; flex-direction: row-reverse; }
-        .team-name { font-size: 26px; font-weight: 800; text-transform: uppercase; margin: 0 15px; letter-spacing: 1px; }
-        .score-box { background: #000; font-size: 45px; font-weight: bold; width: 60px; height: 100%; display: flex; align-items: center; justify-content: center; border-left: 1px solid #333; border-right: 1px solid #333; }
-        .timer-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 120px; background: #151515; height: 100%; border-left: 1px solid #444; border-right: 1px solid #444; }
-        .period { color: #2ecc71; font-size: 14px; font-weight: bold; margin-bottom: -5px; }
-        .time { color: #f1c40f; font-size: 34px; font-weight: bold; font-family: 'Courier New', Courier, monospace; }
-        #access-denied { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; display: none; align-items: center; justify-content: center; font-size: 24px; z-index: 9999; }
+        /* Giao diện chuẩn bóng đá, màu sắc sắc nét */
+        body { background: transparent; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; margin: 0; overflow: hidden; color: white; }
+        .scoreboard { display: flex; background: #111; border: 2px solid #333; border-radius: 4px; height: 70px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 15px; }
+        .team-box { display: flex; align-items: center; padding: 0 20px; min-width: 130px; height: 100%; background: #1a1a1a; }
+        .home { border-left: 4px solid #00a2ff; }
+        .away { border-right: 4px solid #ff3030; flex-direction: row-reverse; }
+        .name { font-size: 26px; font-weight: 800; text-transform: uppercase; margin: 0 15px; letter-spacing: 1px; }
+        .score { background: #000; font-size: 45px; font-weight: bold; width: 60px; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .timer-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; background: #080808; height: 100%; border-left: 1px solid #333; border-right: 1px solid #333; }
+        .period { color: #00ff00; font-size: 13px; font-weight: bold; margin-bottom: -4px; }
+        .time { color: #ffcc00; font-size: 34px; font-weight: bold; font-family: 'Courier New', monospace; }
+        #denied { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; align-items: center; justify-content: center; font-size: 22px; z-index: 99; }
     </style>
 </head>
 <body>
 
-    <div id="access-denied">❌ 403: Cần Key Truy Cập</div>
+    <div id="denied">Vui lòng nhập đúng Key trên link (?key=five68)</div>
 
-    <div class="scoreboard" id="main-content">
-        <div class="team-box home-side">
-            <div class="team-name" id="home-name">HOME</div>
-            <div class="score-box" id="home-score">0</div>
+    <div class="scoreboard" id="ui">
+        <div class="team-box home">
+            <div class="name" id="h-name">HOME</div>
+            <div class="score" id="h-score">0</div>
         </div>
         
-        <div class="timer-box">
-            <div id="period" class="period">1ST</div>
-            <div id="time" class="time">00:00</div>
+        <div class="timer-section">
+            <div id="m-period" class="period">1ST</div>
+            <div id="m-time" class="time">00:00</div>
         </div>
 
-        <div class="team-box away-side">
-            <div class="team-name" id="away-name">AWAY</div>
-            <div class="score-box" id="away-score">0</div>
+        <div class="team-box away">
+            <div class="name" id="a-name">AWAY</div>
+            <div class="score" id="a-score">0</div>
         </div>
     </div>
 
     <script>
-        // ================= CẤU HÌNH CỦA BẠN =================
-        const PASS = "five68"; 
-        const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT_NhfT6-tsgA_tJjqhm9kDnR_PMc8uyuRCTSeexA5GT89wp3LW3jYMi0q2_qDfdCHTaUQ17NMWXuLR/pub?output=csv"; 
-        // ===================================================
+        // --- CẤU HÌNH ---
+        const KEY = "five68";
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT_NhfT6-tsgA_tJjqhm9kDnR_PMc8uyuRCTSeexA5GT89wp3LW3jYMi0q2_qDfdCHTaUQ17NMWXuLR/pub?output=csv";
 
-        // 1. KIỂM TRA MẬT KHẨU (KEY) TRÊN LINK
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('key') !== PASS) {
-            document.getElementById('access-denied').style.display = 'flex';
-            document.getElementById('main-content').style.display = 'none';
+        // Kiểm tra bảo mật
+        const p = new URLSearchParams(window.location.search);
+        if (p.get('key') !== KEY) {
+            document.getElementById('denied').style.display = 'flex';
+            document.getElementById('ui').style.display = 'none';
         }
 
-        let totalSeconds = 0;
-        let isRunning = true;
+        let totalSecs = 0;
 
-        // 2. HÀM HIỂN THỊ THỜI GIAN (Đổi tổng số giây ra Phút:Giây)
-        function formatDisplay() {
-            let mins = Math.floor(totalSeconds / 60);
-            let secs = totalSeconds % 60;
-            document.getElementById('time').innerText = 
+        // Hiển thị thời gian
+        function renderTime() {
+            let mins = Math.floor(totalSecs / 60);
+            let secs = totalSecs % 60;
+            document.getElementById('m-time').innerText = 
                 (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
         }
 
-        // 3. ĐỒNG HỒ TỰ CHẠY MỖI GIÂY
+        // Chạy đồng hồ mỗi giây
         setInterval(() => {
-            if (isRunning) {
-                totalSeconds++;
-                formatDisplay();
-            }
+            totalSecs++;
+            renderTime();
         }, 1000);
 
-        // 4. ĐỒNG BỘ DỮ LIỆU TỪ GOOGLE SHEETS
-        async function syncSheets() {
-            if (sheetURL.includes("DÁN_LINK")) return;
-
+        // Hút dữ liệu từ Google Sheets
+        async function update() {
             try {
-                const res = await fetch(sheetURL);
-                const data = await res.text();
-                // Xử lý cả dấu phẩy và dấu chấm phẩy của CSV
-                const rows = data.split('\n').map(r => r.includes(';') ? r.split(';') : r.split(','));
+                const r = await fetch(CSV_URL);
+                const text = await r.text();
+                
+                // Tách dòng và cột (xử lý cả dấu , và ;)
+                const rows = text.split('\n').map(row => row.includes(';') ? row.split(';') : row.split(','));
 
-                // Cập nhật tên và tỉ số
-                document.getElementById('home-name').innerText = (rows[0][0] || "HOME").trim();
-                document.getElementById('home-score').innerText = (rows[0][1] || "0").trim();
-                document.getElementById('away-name').innerText = (rows[1][0] || "AWAY").trim();
-                document.getElementById('away-score').innerText = (rows[1][1] || "0").trim();
-                document.getElementById('period').innerText = (rows[2][0] || "1ST").trim();
+                // Cập nhật tên, tỉ số, hiệp đấu
+                document.getElementById('h-name').innerText = (rows[0][0] || "").trim();
+                document.getElementById('h-score').innerText = (rows[0][1] || "0").trim();
+                document.getElementById('a-name').innerText = (rows[1][0] || "").trim();
+                document.getElementById('a-score').innerText = (rows[1][1] || "0").trim();
+                document.getElementById('m-period').innerText = (rows[2][0] || "1ST").trim();
 
-                // Xử lý thời gian (Dạng '79:06)
-                let timeRaw = (rows[2][1] || "00:00").trim();
-                let parts = timeRaw.split(':');
-                let sheetTotalSecs = 0;
-
+                // Xử lý logic đồng bộ thời gian
+                let sheetTime = (rows[2][1] || "00:00").trim();
+                let parts = sheetTime.split(':');
+                let sSecs = 0;
+                
                 if (parts.length === 2) {
-                    sheetTotalSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                    sSecs = parseInt(parts[0]) * 60 + parseInt(parts[1]);
                 } else if (parts.length === 3) {
-                    sheetTotalSecs = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
+                    sSecs = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
                 }
 
-                // Nếu thời gian trên Sheets lệch quá 3 giây so với OBS, tiến hành đồng bộ
-                if (Math.abs(sheetTotalSecs - totalSeconds) > 3) {
-                    totalSeconds = sheetTotalSecs;
-                    formatDisplay();
-                    console.log("Đã đồng bộ thời gian từ Sheets: " + timeRaw);
+                // Nếu lệch trên 3 giây so với thực tế thì mới chỉnh lại đồng hồ
+                if (Math.abs(sSecs - totalSecs) > 3) {
+                    totalSecs = sSecs;
+                    renderTime();
                 }
 
             } catch (err) {
-                console.error("Lỗi kết nối Sheets:", err);
+                console.log("Kết nối Sheets...");
             }
         }
 
-        // Kiểm tra Sheets mỗi 3 giây để cập nhật tỉ số
-        setInterval(syncSheets, 3000);
-        syncSheets(); // Chạy ngay lần đầu
+        // Cập nhật từ Sheets mỗi 3 giây
+        setInterval(update, 3000);
+        update();
     </script>
 </body>
 </html>
