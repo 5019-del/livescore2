@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Scoreboard Fix - No Reset</title>
+    <title>Football Scoreboard - Secure & Stable</title>
     <style>
         body { background: transparent; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; margin: 0; overflow: hidden; color: white; }
         .scoreboard { display: flex; background: #111; border: 2px solid #333; border-radius: 4px; height: 70px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.8); margin-top: 15px; }
@@ -14,9 +14,12 @@
         .timer-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 120px; background: #080808; height: 100%; border-left: 1px solid #333; border-right: 1px solid #333; }
         .period { color: #00ff00; font-size: 13px; font-weight: bold; margin-bottom: -4px; }
         .time { color: #ffcc00; font-size: 34px; font-weight: bold; font-family: 'Courier New', monospace; }
+        #denied { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; align-items: center; justify-content: center; font-size: 22px; z-index: 99; }
     </style>
 </head>
 <body>
+
+    <div id="denied">❌ Sai Key truy cập (?key=five68)</div>
 
     <div class="scoreboard" id="ui">
         <div class="team-box home">
@@ -34,10 +37,20 @@
     </div>
 
     <script>
+        // ================= CẤU HÌNH =================
+        const SECRET_KEY = "five68";
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT_NhfT6-tsgA_tJjqhm9kDnR_PMc8uyuRCTSeexA5GT89wp3LW3jYMi0q2_qDfdCHTaUQ17NMWXuLR/pub?output=csv";
+        // ============================================
+
+        // 1. KIỂM TRA KEY BẢO MẬT
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('key') !== SECRET_KEY) {
+            document.getElementById('denied').style.display = 'flex';
+            document.getElementById('ui').style.display = 'none';
+        }
 
         let totalSecs = 0;
-        let lastSheetTime = ""; // Lưu giá trị cũ để so sánh
+        let lastSheetTimeValue = ""; // Lưu giá trị cũ để so sánh tránh reset
 
         function renderTime() {
             let mins = Math.floor(totalSecs / 60);
@@ -46,30 +59,29 @@
                 (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
         }
 
-        // Đếm giây liên tục (không phụ thuộc vào Sheets)
+        // Tự động đếm giây (Chạy độc lập)
         setInterval(() => {
             totalSecs++;
             renderTime();
         }, 1000);
 
-        async function update() {
+        async function syncData() {
             try {
                 const r = await fetch(CSV_URL);
-                const text = await r.text();
-                const rows = text.split('\n').map(row => row.includes(';') ? row.split(';') : row.split(','));
+                const data = await r.text();
+                const rows = data.split('\n').map(row => row.includes(';') ? row.split(';') : row.split(','));
 
-                // Cập nhật Tỉ số & Tên (Luôn cập nhật)
+                // Cập nhật Tên, Tỉ số & Hiệp (Luôn cập nhật mỗi 3s)
                 document.getElementById('h-name').innerText = (rows[0][0] || "").trim();
                 document.getElementById('h-score').innerText = (rows[0][1] || "0").trim();
                 document.getElementById('a-name').innerText = (rows[1][0] || "").trim();
                 document.getElementById('a-score').innerText = (rows[1][1] || "0").trim();
                 document.getElementById('m-period').innerText = (rows[2][0] || "1ST").trim();
 
-                // XỬ LÝ THỜI GIAN THÔNG MINH
+                // ĐỒNG BỘ THỜI GIAN (Chỉ đồng bộ khi bạn chủ động sửa trên Sheets)
                 let currentSheetTime = (rows[2][1] || "00:00").trim();
                 
-                // CHỈ cập nhật lại đồng hồ nếu bạn THAY ĐỔI giá trị trên Sheets thủ công
-                if (currentSheetTime !== lastSheetTime) {
+                if (currentSheetTime !== lastSheetTimeValue) {
                     let parts = currentSheetTime.split(':');
                     let sSecs = 0;
                     if (parts.length === 2) {
@@ -78,16 +90,20 @@
                         sSecs = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2]);
                     }
 
+                    // Nếu đây là lần đầu hoặc bạn vừa sửa số trên Sheets
                     totalSecs = sSecs;
-                    lastSheetTime = currentSheetTime; // Ghi nhớ giá trị mới nhất từ Sheets
+                    lastSheetTimeValue = currentSheetTime; 
                     renderTime();
-                    console.log("Đã đồng bộ mốc thời gian mới từ Sheets: " + currentSheetTime);
+                    console.log("Đã cập nhật mốc thời gian mới từ Sheets: " + currentSheetTime);
                 }
-            } catch (err) { }
+            } catch (err) {
+                console.log("Đang kết nối...");
+            }
         }
 
-        setInterval(update, 3000); // 3 giây kiểm tra Sheets một lần
-        update();
+        // Cập nhật từ Sheets mỗi 3 giây
+        setInterval(syncData, 3000);
+        syncData();
     </script>
 </body>
 </html>
